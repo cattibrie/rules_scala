@@ -55,10 +55,18 @@ case class FocusedZipImporter(focus: Option[File], zips: List[File], zipFiles: L
   def lastModified(filename: String): Option[Long] =
     resolve(filename).flatMap(_ => maxLastMod)
 
-  def apply(filename: String): Option[FileContents] =
+  def apply(filename: String): Option[FileContents] = {
     resolve(filename) map { case (entry, zipFile, importer) =>
       FileContents(importer, Source.fromInputStream(zipFile.getInputStream(entry), "UTF-8").mkString, Some(entry.getName))
+    } orElse {
+      val file = new File(filename)
+      if (file.exists) {
+        Some(FileContents(copy(focus = Option(file.getParentFile)), Source.fromInputStream(new java.io.FileInputStream(file), "UTF-8").mkString, Some(file.getName)))
+      } else {
+        None
+      }
     }
+  }
 
   private[this] def canResolve(filename: String): Boolean = resolve(filename).isDefined
 
