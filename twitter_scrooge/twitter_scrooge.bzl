@@ -229,7 +229,7 @@ def _create_java_info_provider(scrooge_jar, all_deps, output):
         compile_jar = output,
     )
 
-def _compile_generated_scala(
+def compile_generated_scala(
         ctx,
         label,
         output,
@@ -359,7 +359,7 @@ def _compile_thrift_to_language(target_ti, transitive_ti, language, target, ctx)
     )
     return scrooge_file
 
-def _common_aspect_implementation(target, ctx, language, compiler_function):
+def common_scrooge_aspect_implementation(target, ctx, language, compiler_function):
     """Aspect implementation to generate code from thrift files in a language of choice, and then compile it.
     Takes in a `language` (either "java" or "scala") and a function to compile the generated sources.
     """
@@ -402,10 +402,10 @@ def _common_aspect_implementation(target, ctx, language, compiler_function):
         ]
 
 def _scrooge_scala_aspect_impl(target, ctx):
-    return _common_aspect_implementation(target, ctx, "scala", _compile_generated_scala)
+    return common_scrooge_aspect_implementation(target, ctx, "scala", compile_generated_scala)
 
 def _scrooge_java_aspect_impl(target, ctx):
-    return _common_aspect_implementation(target, ctx, "java", _compile_generated_java)
+    return common_scrooge_aspect_implementation(target, ctx, "java", _compile_generated_java)
 
 # Common attributes for both java and scala aspects, needed to generate JVM code from Thrift
 common_attrs = {
@@ -471,7 +471,7 @@ scrooge_java_aspect = aspect(
     fragments = ["java"],
 )
 
-def _scrooge_jvm_library_impl(ctx):
+def scrooge_jvm_library_impl(ctx):
     aspect_info = merge_scrooge_aspect_info(
         [dep[ScroogeAspectInfo] for dep in ctx.attr.deps],
     )
@@ -489,7 +489,7 @@ def _scrooge_jvm_library_impl(ctx):
     ]
 
 scrooge_scala_library = rule(
-    implementation = _scrooge_jvm_library_impl,
+    implementation = scrooge_jvm_library_impl,
     attrs = {
         "deps": attr.label_list(aspects = [scrooge_scala_aspect]),
         "exports": attr.label_list(providers = [JavaInfo]),
@@ -499,7 +499,7 @@ scrooge_scala_library = rule(
 
 scrooge_java_library = rule(
     # They can use the same implementation, since it's just an aggregator for the aspect info.
-    implementation = _scrooge_jvm_library_impl,
+    implementation = scrooge_jvm_library_impl,
     attrs = {
         "deps": attr.label_list(aspects = [scrooge_java_aspect]),
         "exports": attr.label_list(providers = [JavaInfo]),
