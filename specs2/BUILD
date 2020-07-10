@@ -10,8 +10,9 @@ java_import(
         ":specs2_classpath",
     ],
     deps = [
-        "//scala/private/toolchain_deps:scala_library_classpath",
-        "//scala/private/toolchain_deps:scala_xml",
+        "@io_bazel_rules_scala//scala/private/toolchain_deps:parser_combinators",
+        "@io_bazel_rules_scala//scala/private/toolchain_deps:scala_library_classpath",
+        "@io_bazel_rules_scala//scala/private/toolchain_deps:scala_xml",
     ],
 )
 
