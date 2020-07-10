@@ -1,18 +1,10 @@
 load("@io_bazel_rules_scala//scala:providers.bzl", "DepsInfo")
 
-def _files_of(deps):
-    files = []
-    for dep in deps:
-        files.append(dep[JavaInfo].transitive_compile_time_jars)
-    return depset(transitive = files)
-
 def _log_required_provider_id(target, toolchain_type_label, provider_id):
     fail(target + " requires mapping of " + provider_id + " provider id on the toolchain " + toolchain_type_label)
 
 def java_info_for_deps(deps):
-    deps_files = _files_of(deps).to_list()
-    deps_providers = [JavaInfo(output_jar = jar, compile_jar = jar) for jar in deps_files]
-    return [java_common.merge(deps_providers)]
+    return [java_common.merge([dep[JavaInfo] for dep in deps])]
 
 def expose_toolchain_deps(ctx, toolchain_type_label):
     dep_provider_id = ctx.attr.provider_id
