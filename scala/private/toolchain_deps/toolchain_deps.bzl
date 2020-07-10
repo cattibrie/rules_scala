@@ -23,8 +23,4 @@ def expose_toolchain_deps(ctx, toolchain_type_label):
         _log_required_provider_id(ctx.attr.name, toolchain_type_label, dep_provider_id)
 
     deps = dep_provider[DepsInfo].deps
-    deps_files = _files_of(deps).to_list()
-    deps_providers = [JavaInfo(output_jar = jar, compile_jar = jar) for jar in deps_files]
-    return [java_common.merge(deps_providers)]
-    deps = dep_provider[DepsInfo].deps
     return java_info_for_deps(deps)
