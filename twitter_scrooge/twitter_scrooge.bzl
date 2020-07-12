@@ -352,7 +352,7 @@ scrooge_aspect = aspect(
             providers = [JavaInfo],
             default = [
                 Label(
-                    "//external:io_bazel_rules_scala/dependency/scala/scala_library",
+                    "//scala/private/toolchain_deps:scala_library_classpath",
                 ),
                 Label(
                     "//external:io_bazel_rules_scala/dependency/thrift/libthrift",
@@ -429,7 +429,7 @@ scrooge_scala_import = rule(
             providers = [JavaInfo],
             default = [
                 Label(
-                    "//external:io_bazel_rules_scala/dependency/scala/scala_library",
+                    "//scala/private/toolchain_deps:scala_library_classpath",
                 ),
                 Label(
                     "//external:io_bazel_rules_scala/dependency/thrift/libthrift",
