@@ -1,5 +1,6 @@
 load(
     "@io_bazel_rules_scala//scala:providers.bzl",
+    _DepsInfo = "DepsInfo",
     _ScalacProvider = "ScalacProvider",
 )
 
@@ -46,9 +47,11 @@ def _scala_toolchain_impl(ctx):
     if dependency_tracking_method not in ("ast", "high-level"):
         fail("Internal error: invalid dependency_tracking_method " + dependency_tracking_method)
 
+    enable_diagnostics_report = ctx.attr.enable_diagnostics_report
+
     toolchain = platform_common.ToolchainInfo(
         scalacopts = ctx.attr.scalacopts,
-        scalac_provider_attr = ctx.attr.scalac_provider_attr,
+        dep_providers = ctx.attr.dep_providers,
         dependency_mode = dependency_mode,
         strict_deps_mode = strict_deps_mode,
         unused_dependency_checker_mode = unused_dependency_checker_mode,
@@ -56,6 +59,7 @@ def _scala_toolchain_impl(ctx):
         enable_code_coverage_aspect = ctx.attr.enable_code_coverage_aspect,
         scalac_jvm_flags = ctx.attr.scalac_jvm_flags,
         scala_test_jvm_flags = ctx.attr.scala_test_jvm_flags,
+        enable_diagnostics_report = enable_diagnostics_report,
     )
     return [toolchain]
 
@@ -63,9 +67,15 @@ scala_toolchain = rule(
     _scala_toolchain_impl,
     attrs = {
         "scalacopts": attr.string_list(),
-        "scalac_provider_attr": attr.label(
-            default = "@io_bazel_rules_scala//scala:scalac_default",
-            providers = [_ScalacProvider],
+        "dep_providers": attr.label_list(
+            default = [
+                "@io_bazel_rules_scala//scala:scala_xml_provider",
+                "@io_bazel_rules_scala//scala:parser_combinators_provider",
+                "@io_bazel_rules_scala//scala:scala_compile_classpath_provider",
+                "@io_bazel_rules_scala//scala:scala_library_classpath_provider",
+                "@io_bazel_rules_scala//scala:scala_macro_classpath_provider",
+            ],
+            providers = [_DepsInfo],
         ),
         "dependency_mode": attr.string(
             default = "direct",
@@ -89,6 +99,9 @@ scala_toolchain = rule(
         ),
         "scalac_jvm_flags": attr.string_list(),
         "scala_test_jvm_flags": attr.string_list(),
+        "enable_diagnostics_report": attr.bool(
+            doc = "Enable the output of structured diagnostics through the BEP",
+        ),
     },
     fragments = ["java"],
 )

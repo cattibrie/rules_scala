@@ -122,7 +122,20 @@ def twitter_scrooge(
 
     # scrooge-generator needs these runtime_deps to generate java from thrift.
     if not native.existing_rule("io_bazel_rules_scala/dependency/scala/guava"):
-        fail("Please make sure you've called scala_repositories() in your WORKSPACE file before calling twitter_scrooge()")
+        _jvm_maven_import_external(
+            name = "io_bazel_rules_scala_guava",
+            artifact = "com.google.guava:guava:21.0",
+            server_urls = maven_servers,
+            rule_name = "java_import",
+            licenses = ["notice"],
+            artifact_sha256 = "972139718abc8a4893fa78cba8cf7b2c903f35c97aaf44fa3031b0669948b480",
+        )
+
+        native.bind(
+            name = "io_bazel_rules_scala/dependency/scala/guava",
+            actual = "@io_bazel_rules_scala_guava",
+        )
+
     runtime_deps_for_generator = [
         "//external:io_bazel_rules_scala/dependency/scala/guava",
         "//external:{}".format(mustache_bind_target),
@@ -147,6 +160,21 @@ def twitter_scrooge(
         name = "io_bazel_rules_scala/dependency/thrift/util_logging",
         actual = util_logging,
     )
+
+    # This is a shim needed to import `@javax.annotation.Generated` when compiled with jdk11.
+    if not native.existing_rule("io_bazel_rules_scala/dependency/thrift/javax_annotation_api"):
+        _scala_maven_import_external(
+            name = "io_bazel_rules_scala_javax_annotation_api",
+            artifact = "javax.annotation:javax.annotation-api:1.3.2",
+            artifact_sha256 = "e04ba5195bcd555dc95650f7cc614d151e4bcd52d29a10b8aa2197f3ab89ab9b",
+            licenses = ["notice"],
+            server_urls = maven_servers,
+        )
+
+        native.bind(
+            name = "io_bazel_rules_scala/dependency/thrift/javax_annotation_api",
+            actual = "@io_bazel_rules_scala_javax_annotation_api",
+        )
 
 def _colon_paths(data):
     return ":".join([f.path for f in sorted(data)])
@@ -257,6 +285,10 @@ def _compile_generated_scala(
         label.name + "_scalac.statsfile",
         sibling = scrooge_jar,
     )
+    diagnosticsfile = ctx.actions.declare_file(
+        label.name + "_scalac.diagnosticsproto",
+        sibling = scrooge_jar,
+    )
     all_deps = _concat_lists(deps_java_info, implicit_deps)
     merged_deps = java_common.merge(all_deps)
 
@@ -270,6 +302,7 @@ def _compile_generated_scala(
         output,
         manifest,
         statsfile,
+        diagnosticsfile,
         sources = [],
         cjars = merged_deps.transitive_compile_time_jars,
         all_srcjars = depset([scrooge_jar]),
@@ -430,7 +463,7 @@ common_attrs = {
         providers = [JavaInfo],
         default = [
             Label(
-                "//external:io_bazel_rules_scala/dependency/scala/scala_library",
+                "//scala/private/toolchain_deps:scala_library_classpath",
             ),
             Label(
                 "//external:io_bazel_rules_scala/dependency/thrift/libthrift",
@@ -440,6 +473,9 @@ common_attrs = {
             ),
             Label(
                 "//external:io_bazel_rules_scala/dependency/thrift/util_core",
+            ),
+            Label(
+                "//external:io_bazel_rules_scala/dependency/thrift/javax_annotation_api",
             ),
         ],
     ),
@@ -548,7 +584,7 @@ scrooge_scala_import = rule(
             providers = [JavaInfo],
             default = [
                 Label(
-                    "//external:io_bazel_rules_scala/dependency/scala/scala_library",
+                    "//scala/private/toolchain_deps:scala_library_classpath",
                 ),
                 Label(
                     "//external:io_bazel_rules_scala/dependency/thrift/libthrift",

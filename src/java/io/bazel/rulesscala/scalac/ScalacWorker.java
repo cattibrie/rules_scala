@@ -1,20 +1,15 @@
 package io.bazel.rulesscala.scalac;
 
+import io.bazel.rulesscala.io_utils.StreamCopy;
 import io.bazel.rulesscala.jar.JarCreator;
 import io.bazel.rulesscala.worker.Worker;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import scala.tools.nsc.Driver;
+import scala.tools.nsc.MainClass;
+import scala.tools.nsc.reporters.ConsoleReporter;
+
+import java.io.*;
 import java.lang.reflect.Field;
-import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,10 +17,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import org.apache.commons.io.IOUtils;
-import scala.tools.nsc.Driver;
-import scala.tools.nsc.MainClass;
-import scala.tools.nsc.reporters.ConsoleReporter;
 
 class ScalacWorker implements Worker.Interface {
   private static boolean isWindows = System.getProperty("os.name").toLowerCase().contains("windows");
@@ -129,7 +120,7 @@ class ScalacWorker implements Worker.Interface {
   }
 
   private static List<File> extractJar(String jarPath, String outputFolder, String[] extensions)
-      throws IOException, FileNotFoundException {
+      throws IOException {
 
     List<File> outputPaths = new ArrayList<File>();
     JarFile jar = new JarFile(jarPath);
@@ -152,7 +143,7 @@ class ScalacWorker implements Worker.Interface {
 
       InputStream is = jar.getInputStream(file); // get the input stream
       OutputStream fos = new FileOutputStream(f);
-      IOUtils.copy(is, fos);
+      StreamCopy.copy(is, fos);
       fos.close();
       is.close();
     }
@@ -219,7 +210,7 @@ class ScalacWorker implements Worker.Interface {
   }
 
   private static void compileScalaSources(CompileOptions ops, String[] scalaSources, Path tmpPath)
-      throws IllegalAccessException {
+      throws IllegalAccessException, IOException  {
 
     String[] pluginParams = getPluginParamsFrom(ops);
 
@@ -228,7 +219,8 @@ class ScalacWorker implements Worker.Interface {
     String[] compilerArgs =
         merge(ops.scalaOpts, ops.pluginArgs, constParams, pluginParams, scalaSources);
 
-    MainClass comp = new MainClass();
+    MainClass comp = new ReportableMainClass(ops);
+
     long start = System.currentTimeMillis();
     try {
       comp.process(compilerArgs);
@@ -252,6 +244,10 @@ class ScalacWorker implements Worker.Interface {
     }
 
     ConsoleReporter reporter = (ConsoleReporter) reporterField.get(comp);
+    if(reporter instanceof ProtoReporter) {
+      ProtoReporter protoReporter = (ProtoReporter) reporter;
+      protoReporter.writeTo(Paths.get(ops.diagnosticsFile));
+    }
 
     if (reporter.hasErrors()) {
       reporter.printSummary();

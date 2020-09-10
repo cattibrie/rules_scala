@@ -17,6 +17,10 @@ load("@com_github_bazelbuild_buildtools//buildifier:deps.bzl", "buildifier_depen
 
 buildifier_dependencies()
 
+load("@io_bazel_rules_scala//:version.bzl", "bazel_version")
+
+bazel_version(name = "bazel_version")
+
 load("//scala:scala.bzl", "scala_repositories")
 
 scala_repositories(fetch_sources = True)
@@ -171,6 +175,7 @@ java_import_external(
     jar_urls = ["https://repo.maven.apache.org/maven2/org/apache/commons/commons-lang3/3.5/commons-lang3-3.5.jar"],
     licenses = ["notice"],  # Apache 2.0
     neverlink = True,
+    testonly_ = True,
 )
 
 ## Linting
@@ -195,13 +200,17 @@ go_rules_dependencies()
 
 go_register_toolchains()
 
+bazel_toolchains_version = "3.4.0"
+
+bazel_toolchains_sha256 = "882fecfc88d3dc528f5c5681d95d730e213e39099abff2e637688a91a9619395"
+
 http_archive(
     name = "bazel_toolchains",
-    sha256 = "8062febd539d2f3246e479715e3f1eb29f0420eca26da369950309cb2bed25fd",
-    strip_prefix = "bazel-toolchains-0b442a1bf997840c4f1063ee8a90605392418741",
+    sha256 = bazel_toolchains_sha256,
+    strip_prefix = "bazel-toolchains-%s" % bazel_toolchains_version,
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/0b442a1bf997840c4f1063ee8a90605392418741.tar.gz",
-        "https://github.com/bazelbuild/bazel-toolchains/archive/0b442a1bf997840c4f1063ee8a90605392418741.tar.gz",
+        "https://github.com/bazelbuild/bazel-toolchains/releases/download/%s/bazel-toolchains-%s.tar.gz" % (bazel_toolchains_version, bazel_toolchains_version),
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/%s.tar.gz" % bazel_toolchains_version,
     ],
 )
 

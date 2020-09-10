@@ -30,7 +30,7 @@ java_binary(
     main_class = "scalarules.test.JavaBinary",
     runtime_deps = [
         ":OtherJavaLib",
-        "//external:io_bazel_rules_scala/dependency/scala/scala_library",
+        "//scala/private/toolchain_deps:scala_library_classpath",
     ],
     deps = [
         ":Exported",
@@ -477,6 +477,26 @@ scala_specs2_junit_test(
     "//test/src/main/scala/scalarules/test/large_classpath:largeClasspath",
     "//test:test_scala_proto_server",
 ]]
+
+# Generate a file containing the rootpaths of a Scala binary.
+genrule(
+    name = "rootpath-script",
+    srcs = [":ScalaBinary"],
+    outs = ["rootpath-script.out"],
+    cmd = """
+       rootpaths=($(rootpaths {}))
+       (IFS='\n'; echo "$${{rootpaths[*]}}") | sort > $@
+   """.format(":ScalaBinary"),
+)
+
+# Validate that the rootpaths point to both the binary
+# and the JAR.
+sh_test(
+    name = "ScalaBinaryRootpaths",
+    srcs = ["rootpaths_binary.sh"],
+    args = ["$(location :rootpath-script.out)"],
+    data = [":rootpath-script.out"],
+)
 
 sh_test(
     name = "test_binary_run_with_large_classpath",

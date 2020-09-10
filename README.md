@@ -3,7 +3,7 @@
 This is Twitter's fork of [bazelbuild/scala_rules](https://github.com/bazelbuild/rules_scala), intended for Twitter internal consumption to serve Twitter's short term needs. All changes are meant to be upstreamed back to [bazelbuild/scala_rules](https://github.com/bazelbuild/rules_scala).
 
 # Scala Rules for Bazel
-[![Build Status](https://travis-ci.org/bazelbuild/rules_scala.svg?branch=master)](https://travis-ci.org/bazelbuild/rules_scala) [![Build status](https://badge.buildkite.com/90ce5244556df74db805a3c24a703fb87458396f9e1ddd687e.svg)](https://buildkite.com/bazel/scala-rules-scala-postsubmit) [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/bazelbuild_rules_scala/Lobby)
+[![Build Status](https://travis-ci.org/bazelbuild/rules_scala.svg?branch=master)](https://travis-ci.org/bazelbuild/rules_scala) [![Build status](https://badge.buildkite.com/90ce5244556df74db805a3c24a703fb87458396f9e1ddd687e.svg?branch=master)](https://buildkite.com/bazel/scala-rules-scala-postsubmit) [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/bazelbuild_rules_scala/Lobby)
 
 ## Overview
 
@@ -54,6 +54,9 @@ http_archive(
     sha256 = "8c48283aeb70e7165af48191b0e39b7434b0368718709d1bced5c3781787d8e7",
 )
 
+load("@io_bazel_rules_scala//:version.bzl", "bazel_version")
+bazel_version(name = "bazel_version")
+
 load("@io_bazel_rules_scala//scala:toolchains.bzl", "scala_register_toolchains")
 scala_register_toolchains()
 
@@ -69,6 +72,11 @@ http_archive(
     strip_prefix = "protobuf-%s" % protobuf_version,
     sha256 = protobuf_version_sha256,
 )
+
+# Dependencies needed for google_protobuf.
+# You may need to modify this if your project uses google_protobuf for other purposes.
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+protobuf_deps()
 ```
 
 This will load the `rules_scala` repository at the commit sha
@@ -153,7 +161,7 @@ for an example workspace using another scala version.
 
 ## Bazel compatible versions
 
-| bazel  | rules_scala gitsha |
+| minimal bazel version | rules_scala gitsha |
 |--------|--------------------|
 | 2.0.0  | HEAD               |
 | 1.1.0  | d681a952da74fc61a49fc3167b03548f42fc5dde |
@@ -164,6 +172,8 @@ for an example workspace using another scala version.
 | 0.15.x | 3b9ab9be31ac217d3337c709cb6bfeb89c8dcbb1 |
 | 0.14.x | 3b9ab9be31ac217d3337c709cb6bfeb89c8dcbb1 |
 | 0.13.x | 3c987b6ae8a453886759b132f1572c0efca2eca2 |
+
+PRs are also built with highest supported bazel version (see [Travis config](https://github.com/bazelbuild/rules_scala/blob/master/.travis.yml) for the exact highest version)
 
 ## Breaking changes
 
@@ -325,6 +335,9 @@ See [Customizable Phase](docs/customizable_phase.md) for more info.
  - [Scala Format](docs/phase_scalafmt.md)
 
 ## Building from source
+Setup bazel:
+We recommend using [Bazelisk](https://docs.bazel.build/versions/master/install.html) as your default bazel binary
+
 Test & Build:
 ```
 bash test_all.sh
