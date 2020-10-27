@@ -83,8 +83,16 @@ def scala_repositories(
             "io_bazel_rules_scala_scalactic",
             "io_bazel_rules_scala_scala_xml",
             "io_bazel_rules_scala_scala_parser_combinators",
+            # Remove this dependency when ScroogeConfig and ScroogeOptionParser are added to the com.twitter.scrooge
+            "io_bazel_rules_scala_scopt",
         ],
         maven_servers = maven_servers,
         fetch_sources = fetch_sources,
         overriden_artifacts = overriden_artifacts,
+    )
+
+    # Remove this dependency when ScroogeConfig and ScroogeOptionParser are added to the com.twitter.scrooge
+    native.bind(
+        name = "io_bazel_rules_scala/dependency/scala/scopt",
+        actual = "@io_bazel_rules_scala_scopt",
     )
